@@ -1,5 +1,9 @@
 mod config;
+mod error;
 mod handlers;
+mod models;
+
+pub use models::User;
 
 use std::{ops::Deref, sync::Arc};
 

@@ -7,7 +7,9 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true }
+argon2 = { version = "0.5.3", features = ["std"] }
 axum = { workspace = true }
+chrono = { version = "0.4.38", features = ["serde"] }
 serde = { workspace = true }
 serde_yaml = { workspace = true }
 sqlx = { workspace = true }
@@ -18,3 +20,4 @@ tracing-subscriber = { workspace = true }
 
 [dev-dependencies]
 axum-macros = "0.4.1"
+sqlx-db-tester = "0.4.2"

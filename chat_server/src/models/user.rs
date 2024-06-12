@@ -1,12 +1,24 @@
-use std::mem;
-
+use crate::{error::AppError, User};
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
+use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
+use std::mem;
 
-use crate::{error::AppError, User};
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow, PartialEq)]
+pub struct UserInput {
+    pub fullname: String,
+    pub email: String,
+    pub password: String,
+}
 
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow, PartialEq)]
+pub struct SigninUser {
+    pub email: String,
+    pub password: String,
+}
 //
 impl User {
     // find_by_email 方法
@@ -23,14 +35,14 @@ impl User {
     }
 
     /// create 方法
-    pub async fn create(
-        email: &str,
-        fullname: &str,
-        password: &str,
-        pool: &sqlx::PgPool,
-    ) -> Result<User, AppError> {
+    pub async fn create(user: &UserInput, pool: &sqlx::PgPool) -> Result<User, AppError> {
+        let exists_user = User::find_by_email(&user.email, pool).await?;
+
+        if exists_user.is_some() {
+            return Err(AppError::EmailAlreadyExists(user.email.to_string()));
+        }
         // 使用 argon2 生成密码哈希
-        let password = hash_password(password)?;
+        let password = hash_password(&user.password)?;
         let user = sqlx::query_as::<_, User>(
             r#"
             INSERT INTO users (fullname, email, password_hash)
@@ -38,8 +50,8 @@ impl User {
             RETURNING id, fullname, email, created_at
             "#,
         )
-        .bind(fullname)
-        .bind(email)
+        .bind(&user.fullname)
+        .bind(&user.email)
         .bind(password)
         .fetch_one(pool)
         .await?;
@@ -47,24 +59,21 @@ impl User {
     }
 
     /// verify email and password
-    pub async fn verify(
-        email: &str,
-        password: &str,
-        pool: &sqlx::PgPool,
-    ) -> Result<Option<Self>, AppError> {
+    pub async fn verify(input: &SigninUser, pool: &sqlx::PgPool) -> Result<Option<Self>, AppError> {
         // find user by email
         let user: Option<User> = sqlx::query_as(
             "SELECT id, fullname, email, password_hash, created_at FROM users WHERE email = $1",
         )
-        .bind(email)
+        .bind(&input.email)
         .fetch_optional(pool)
         .await?;
+
         // verify password
         match user {
             Some(mut user) => {
                 // take password_hash from user
                 let password_hash = mem::take(&mut user.password_hash).unwrap_or_default();
-                let is_valid = verify_password(password, &password_hash)?;
+                let is_valid = verify_password(&input.password, &password_hash)?;
                 if is_valid {
                     Ok(Some(user))
                 } else {
@@ -99,6 +108,40 @@ fn verify_password(password: &str, password_hash: &str) -> Result<bool, AppError
 }
 
 #[cfg(test)]
+impl User {
+    pub fn new(id: i64, fullname: &str, email: &str) -> Self {
+        Self {
+            id,
+            fullname: fullname.to_string(),
+            email: email.to_string(),
+            password_hash: None,
+            created_at: chrono::Utc::now(),
+        }
+    }
+}
+
+#[cfg(test)]
+impl UserInput {
+    pub fn new(fullname: &str, email: &str, password: &str) -> Self {
+        Self {
+            fullname: fullname.to_string(),
+            email: email.to_string(),
+            password: password.to_string(),
+        }
+    }
+}
+
+#[cfg(test)]
+impl SigninUser {
+    pub fn new(email: &str, password: &str) -> Self {
+        Self {
+            email: email.to_string(),
+            password: password.to_string(),
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use anyhow::Result;
@@ -125,7 +168,9 @@ mod tests {
         let email = "firsero@acme.org";
         let password = "password";
 
-        let user = User::create(email, name, password, &pool).await?;
+        let user_input = UserInput::new(name, email, password);
+
+        let user = User::create(&user_input, &pool).await?;
         assert_eq!(user.email, email);
         assert_eq!(user.fullname, name);
         assert!(user.id > 0);
@@ -133,8 +178,10 @@ mod tests {
         let user = User::find_by_email(email, &pool).await?;
         assert!(user.is_some());
 
-        assert!(User::verify(email, password, &pool).await?.is_some());
-        assert!(User::verify(email, "wrongpass", &pool).await?.is_none());
+        let right_user = SigninUser::new(email, password);
+        assert!(User::verify(&right_user, &pool).await?.is_some());
+        let wrong_user = SigninUser::new(email, "wrong_password");
+        assert!(User::verify(&wrong_user, &pool).await?.is_none());
         Ok(())
     }
 }

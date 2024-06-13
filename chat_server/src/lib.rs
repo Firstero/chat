@@ -111,8 +111,8 @@ impl AppState {
         use std::path::Path;
         let sk = EncodingKey::load(&config.auth.sk).context("load sk failed")?;
         let pk = DecodingKey::load(&config.auth.pk).context("load pk failed")?;
-        // let server_url = config.server.db_url.split('/').next().unwrap();
-        let server_url = "postgresql://firstero:firstero@localhost:5432".to_string();
+        let pos = config.server.db_url.rfind('/').expect("invalid db url");
+        let server_url = &config.server.db_url[..pos];
         let tdb = sqlx_db_tester::TestPg::new(server_url.to_string(), Path::new("../migrations"));
 
         let pool = tdb.get_pool().await;

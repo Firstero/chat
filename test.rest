@@ -1,0 +1,26 @@
+
+### signup user
+POST http://localhost:8080/api/signup
+Content-Type: application/json
+
+{
+    "fullname": "firstero",
+    "email": "firstero@org",
+    "password": "123456"
+}
+
+### signin user
+# @name signin
+POST http://localhost:8080/api/signin
+Content-Type: application/json
+
+{
+    "fullname": "firstero",
+    "email": "firstero@org",
+    "password": "123456"
+}
+
+@token = {{signin.response.body.token}}
+### get chat list
+GET http://localhost:8080/api/chat
+Authorization: Bearer {{token}}

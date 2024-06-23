@@ -1,11 +1,13 @@
 mod config;
 mod error;
 mod handlers;
+mod middlewares;
 mod models;
 mod utils;
 
 use anyhow::Context;
 use error::AppError;
+use middlewares::{set_layer, verify_token};
 pub use models::User;
 use sqlx::PgPool;
 use utils::{DecodingKey, EncodingKey};
@@ -13,6 +15,7 @@ use utils::{DecodingKey, EncodingKey};
 use std::{fmt, ops::Deref, sync::Arc};
 
 use axum::{
+    middleware::from_fn_with_state,
     routing::{get, patch, post},
     Router,
 };
@@ -39,8 +42,6 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
     let state = AppState::try_new(config).await?;
 
     let api = Router::new()
-        .route("/signin", post(signin_handler))
-        .route("/signup", post(signup_handler))
         .route(
             "/chat",
             get(list_chat_handler)
@@ -57,14 +58,18 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
         .route(
             "/chat/:id/message",
             get(list_message_handler).post(create_message_handler),
-        );
+        )
+        .layer(from_fn_with_state(state.clone(), verify_token))
+        // routes doesn't need token verification layer
+        .route("/signin", post(signin_handler))
+        .route("/signup", post(signup_handler));
 
     let router = Router::new()
         .route("/", get(index_handler))
         .nest("/api", api)
-        .with_state(state);
+        .with_state(state.clone());
 
-    Ok(router)
+    Ok(set_layer(router))
 }
 
 // 给 AppState 实现 Dereference trait

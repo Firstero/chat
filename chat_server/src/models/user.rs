@@ -184,4 +184,25 @@ mod tests {
         assert!(User::verify(&wrong_user, &pool).await?.is_none());
         Ok(())
     }
+
+    #[tokio::test]
+    async fn create_duplicate_user_should_fail() -> Result<()> {
+        // init test database
+        let server_url = "postgres://firstero:firstero@localhost:5432".to_string();
+        let tdb = TestPg::new(server_url, Path::new("../migrations"));
+        let pool = tdb.get_pool().await;
+        // init test data
+        let name = "firstero";
+        let email = "firsero@acme.org";
+        let password = "password";
+
+        let user_input = UserInput::new(name, email, password);
+        User::create(&user_input, &pool).await?;
+        // create duplicate user
+        let ret = User::create(&user_input, &pool).await;
+        match ret {
+            Err(AppError::EmailAlreadyExists(_)) => Ok(()),
+            _ => panic!("Expecting EmailAlreadyExists error"),
+        }
+    }
 }

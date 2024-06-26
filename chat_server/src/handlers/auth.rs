@@ -45,7 +45,7 @@ mod tests {
     pub async fn signup_should_work() -> Result<()> {
         let config = AppConfig::try_load()?;
         let (_tdb, state) = AppState::new_for_test(config).await?;
-        let input = UserInput::new("firsteor", "firstero@email", "password");
+        let input = UserInput::new("firsteor", "firstero@email", "acme", "password");
         let ret = signup_handler(State(state), Json(input))
             .await?
             .into_response();
@@ -63,10 +63,11 @@ mod tests {
         let config = AppConfig::try_load()?;
         let (_tdb, state) = AppState::new_for_test(config).await?;
         // init input
-        let email = "firstero@email.org";
         let name = "firstero";
+        let email = "firstero@email.org";
+        let workspace = "acme";
         let password = "password";
-        let input = UserInput::new(name, email, password);
+        let input = UserInput::new(name, email, workspace, password);
         User::create(&input, &state.pool).await?;
 
         let sign_input = SigninUser::new(email, password);

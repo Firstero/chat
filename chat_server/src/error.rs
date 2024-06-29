@@ -11,8 +11,14 @@ pub enum AppError {
     #[error("argon2 error: {0}")]
     Argon2(#[from] argon2::password_hash::Error),
 
+    #[error("create chat error: {0}")]
+    CreateChatError(String),
+
     #[error("http header parse error: {0}")]
     HttpHeader(#[from] axum::http::header::InvalidHeaderValue),
+
+    #[error("not found: {0}")]
+    NotFound(String),
 
     #[error("jwt error: {0}")]
     Jwt(#[from] jwt_simple::Error),
@@ -32,6 +38,8 @@ impl IntoResponse for AppError {
             AppError::Jwt(_) => StatusCode::FORBIDDEN,
             AppError::Sqlx(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::EmailAlreadyExists(_) => StatusCode::CONFLICT,
+            AppError::CreateChatError(_) => StatusCode::BAD_REQUEST,
+            AppError::NotFound(_) => StatusCode::NOT_FOUND,
         };
         (status, Json(json!({"error": self.to_string()}))).into_response()
     }

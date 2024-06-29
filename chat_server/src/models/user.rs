@@ -18,6 +18,13 @@ pub struct UserInput {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, PartialEq)]
+pub struct ChatUser {
+    pub id: i64,
+    pub fullname: String,
+    pub email: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow, PartialEq)]
 pub struct SigninUser {
     pub email: String,
     pub password: String,
@@ -64,7 +71,9 @@ impl User {
         .bind(password)
         .fetch_one(pool)
         .await?;
-        ws.trigger_update_owner(user.id as _, pool).await?;
+        if ws.owner_id == 0 {
+            ws.update_owner(user.id as _, pool).await?;
+        }
         Ok(user)
     }
 
@@ -109,6 +118,38 @@ impl User {
             }
             None => Ok(None),
         }
+    }
+}
+
+impl ChatUser {
+    #[allow(dead_code)]
+    pub async fn find_by_ids(ids: &[i64], pool: &PgPool) -> Result<Vec<Self>, AppError> {
+        let users = sqlx::query_as(
+            r#"
+            SELECT id, fullname, email
+            FROM users
+            WHERE id = ANY($1)
+            "#,
+        )
+        .bind(ids)
+        .fetch_all(pool)
+        .await?;
+        Ok(users)
+    }
+
+    #[allow(dead_code)]
+    pub async fn fetch_all(ws_id: u64, pool: &PgPool) -> Result<Vec<Self>, AppError> {
+        let users = sqlx::query_as(
+            r#"
+            SELECT id, fullname, email
+            FROM users
+            WHERE ws_id = $1
+            "#,
+        )
+        .bind(ws_id as i64)
+        .fetch_all(pool)
+        .await?;
+        Ok(users)
     }
 }
 

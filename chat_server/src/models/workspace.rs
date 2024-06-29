@@ -51,16 +51,12 @@ impl Workspace {
         Ok(ws)
     }
 
-    pub async fn trigger_update_owner(
-        &self,
-        owner_id: u64,
-        pool: &PgPool,
-    ) -> Result<Self, AppError> {
+    pub async fn update_owner(&self, owner_id: u64, pool: &PgPool) -> Result<Self, AppError> {
         let ws = sqlx::query_as(
             r#"
             UPDATE workspaces
             SET owner_id = $1
-            WHERE owner_id = 0 and (select ws_id from users where id = $1) = $2
+            WHERE id = $2
             RETURNING id, name, owner_id, created_at
             "#,
         )

@@ -6,7 +6,10 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
-pub use user::{SigninUser, UserInput};
+pub use {
+    chat::ChatInput,
+    user::{ChatUser, SigninUser, UserInput},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, PartialEq)]
 pub struct User {
@@ -29,18 +32,10 @@ pub struct Workspace {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow, PartialEq)]
-pub struct ChatUser {
-    pub id: i64,
-    pub fullname: String,
-    pub email: String,
-}
-
-// CREATE TYPE chat_type AS ENUM ('single', 'group', 'private_channel', 'public_channel');
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::Type)]
-#[sqlx(type_name = "chat_type", rename_all = "lowercase")]
+#[sqlx(type_name = "chat_type", rename_all = "snake_case")]
 pub enum ChatType {
-    Private,
+    Single,
     Group,
     PrivateChannel,
     PublicChannel,

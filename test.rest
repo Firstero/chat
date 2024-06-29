@@ -21,7 +21,44 @@ Content-Type: application/json
     "password": "123456"
 }
 
+### create another user
+POST http://localhost:8080/api/signup
+Content-Type: application/json
+
+{
+    "fullname": "Alice",
+    "email": "Alice@org",
+    "password": "123456",
+    "workspace": "acme"
+}
+
 @token = {{signin.response.body.token}}
 ### get chat list
-GET http://localhost:8080/api/chat
+POST http://localhost:8080/api/chats
 Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "acme",
+    "members": [1, 2],
+    "public": true
+}
+
+### create another chat
+POST http://localhost:8080/api/chats
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "members": [1, 2],
+    "public": false
+}
+### get chat list
+GET http://localhost:8080/api/chats
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### get user list
+GET http://localhost:8080/api/users
+Authorization: Bearer {{token}}
+Content-Type: application/json

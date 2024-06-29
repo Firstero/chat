@@ -1,7 +1,7 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 
-use crate::{error::AppError, models::SigninUser, models::UserInput, AppState, User};
+use crate::{error::AppError, AppState, SigninUser, User, UserInput};
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AuthOutput {
     token: String,

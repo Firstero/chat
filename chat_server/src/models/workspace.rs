@@ -137,7 +137,7 @@ mod tests {
             .expect("workspace not found");
         assert_eq!(ws.name, "ws_create2");
         assert_eq!(user.ws_id, ws.id);
-        assert_eq!(ws.owner_id, user.id as i64);
+        assert_eq!(ws.owner_id, user.id);
         Ok(())
     }
 }

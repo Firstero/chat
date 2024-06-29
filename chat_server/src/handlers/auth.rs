@@ -63,12 +63,8 @@ mod tests {
         let config = AppConfig::try_load()?;
         let (_tdb, state) = AppState::new_for_test(config).await?;
         // init input
-        let name = "firstero";
-        let email = "firstero@email.org";
-        let workspace = "acme";
-        let password = "password";
-        let input = UserInput::new(name, email, workspace, password);
-        User::create(&input, &state.pool).await?;
+        let email = "Alice@test.org";
+        let password = "123456";
 
         let sign_input = SigninUser::new(email, password);
         let ret = signin_handler(State(state), Json(sign_input))

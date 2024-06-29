@@ -6,7 +6,8 @@ Content-Type: application/json
 {
     "fullname": "firstero",
     "email": "firstero@org",
-    "password": "123456"
+    "password": "123456",
+    "workspace": "acme"
 }
 
 ### signin user

@@ -51,17 +51,21 @@ impl Workspace {
         Ok(ws)
     }
 
-    pub async fn update_owner(&self, owner_id: u64, pool: &PgPool) -> Result<Self, AppError> {
+    pub async fn trigger_update_owner(
+        &self,
+        owner_id: u64,
+        pool: &PgPool,
+    ) -> Result<Self, AppError> {
         let ws = sqlx::query_as(
             r#"
             UPDATE workspaces
-            SET owner_id = $2
-            WHERE id = $1 and (select ws_id from users where id = $1) = $2
+            SET owner_id = $1
+            WHERE owner_id = 0 and (select ws_id from users where id = $1) = $2
             RETURNING id, name, owner_id, created_at
             "#,
         )
-        .bind(self.id)
         .bind(owner_id as i64)
+        .bind(self.id)
         .fetch_one(pool)
         .await?;
         Ok(ws)
@@ -86,31 +90,58 @@ impl Workspace {
 #[cfg(test)]
 mod tests {
     use anyhow::Result;
-    use sqlx_db_tester::TestPg;
-    use std::path::Path;
 
     use crate::{
         models::{UserInput, Workspace},
+        test_utils::get_test_pool,
         User,
     };
 
     #[tokio::test]
-    async fn workspace_curd_should_work() -> Result<()> {
-        let tdb = TestPg::new(
-            "postgres://firstero:firstero@localhost:5432".to_string(),
-            Path::new("../migrations"),
+    async fn workspace_find_should_work() -> Result<()> {
+        let (_tdb, pool) = get_test_pool(None).await;
+        // test fetch all chat users
+        let users = Workspace::fetch_all_chat_users(1, &pool).await?;
+        assert_eq!(users.len(), 5);
+        // test find by name
+        let ws = Workspace::find_by_name("acme", &pool).await?;
+        assert_eq!(ws.unwrap().name, "acme");
+        // test find by id
+        let ws = Workspace::find_by_id(1, &pool).await?;
+        assert_eq!(ws.unwrap().name, "acme");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn workspace_create_should_work() -> Result<()> {
+        let (_tdb, pool) = get_test_pool(None).await;
+        // 先有 workspace 再有 user
+        let ws = Workspace::create("ws_create", 1, &pool).await?;
+        let input = UserInput::new(
+            "test_for_ws_create",
+            "test_for_ws_create@org",
+            &ws.name,
+            "password",
         );
-        let pool = tdb.get_pool().await;
-        let input = UserInput::new("test", "test@org.com", "ws_name", "password");
         let user = User::create(&input, &pool).await?;
-        let ws0 = Workspace::find_by_name("ws_name", &pool).await?.unwrap();
-        assert_eq!(ws0.name, "ws_name");
-        assert_eq!(ws0.owner_id, user.id);
-        assert_eq!(user.ws_id, ws0.id);
 
-        let ws = Workspace::find_by_id(user.ws_id, &pool).await?.unwrap();
-        assert_eq!(ws0, ws);
-
+        assert_eq!(ws.name, "ws_create");
+        assert_eq!(user.ws_id, ws.id);
+        assert_eq!(ws.owner_id, 1);
+        // 直接创建 user，并创建 workspace
+        let input = UserInput::new(
+            "test_for_ws_create2",
+            "test_for_ws_create2@org",
+            "ws_create2",
+            "password",
+        );
+        let user = User::create(&input, &pool).await?;
+        let ws = Workspace::find_by_name("ws_create2", &pool)
+            .await?
+            .expect("workspace not found");
+        assert_eq!(ws.name, "ws_create2");
+        assert_eq!(user.ws_id, ws.id);
+        assert_eq!(ws.owner_id, user.id as i64);
         Ok(())
     }
 }

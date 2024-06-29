@@ -17,9 +17,9 @@ CREATE UNIQUE INDEX user_email_idx ON users(email);
 CREATE TYPE chat_type AS ENUM ('single', 'group', 'private_channel', 'public_channel');
 
 -- create chat table
-CREATE TABLE IF NOT EXISTS chat (
+CREATE TABLE IF NOT EXISTS chats (
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(64) NOT NULL,
+    name VARCHAR(64),
     type chat_type NOT NULL,
     -- user id list
     members BIGINT[] NOT NULL,
@@ -27,22 +27,19 @@ CREATE TABLE IF NOT EXISTS chat (
 );
 
 -- create index on created_at desc
-CREATE INDEX chat_created_at_idx ON chat(created_at DESC);
+CREATE INDEX chat_created_at_idx ON chats(created_at DESC);
 
 -- create message table
 CREATE TABLE IF NOT EXISTS message (
     id BIGSERIAL PRIMARY KEY,
-    chat_id BIGINT NOT NULL REFERENCES chat(id),
+    chat_id BIGINT NOT NULL REFERENCES chats(id),
     sender_id BIGINT NOT NULL REFERENCES users(id),
     content TEXT NOT NULL,
     images TEXT[],
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- 联合索引 chat_id, created_at desc
+-- chat_id, created_at desc
 CREATE INDEX IF NOT EXISTS message_chat_id_created_at_idx ON message(chat_id, created_at DESC);
 -- create index on sender_id, created_at desc
 CREATE INDEX IF NOT EXISTS message_sender_id_created_at_idx ON message(sender_id, created_at DESC);
-
-
-

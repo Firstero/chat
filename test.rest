@@ -62,3 +62,23 @@ Content-Type: application/json
 GET http://localhost:8080/api/users
 Authorization: Bearer {{token}}
 Content-Type: application/json
+
+
+### upload files
+POST http://localhost:8080/api/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=MyBoundary
+
+--MyBoundary
+Content-Disposition: form-data; filename="DeathNote-L.png"
+Content-Type: application/octet-stream
+
+< /Users/firstero/Downloads/DeathNote-L.png
+--MyBoundary
+Content-Disposition: form-data; filename="hello.txt"
+
+hello, world!
+--MyBoundary--
+
+### download files
+GET http://localhost:8080/api/files/1/933/58a/63d6b0571dd46855d6f64e045a30f71d2a.png

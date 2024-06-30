@@ -11,9 +11,9 @@ use middlewares::{set_layer, verify_token};
 use sqlx::PgPool;
 use utils::{DecodingKey, EncodingKey};
 
-use std::{fmt, ops::Deref, sync::Arc};
+use std::{fmt, fs, ops::Deref, sync::Arc};
 
-pub use models::{Chat, ChatInput, ChatUser, SigninUser, User, UserInput, Workspace};
+pub use models::{Chat, ChatFile, ChatInput, ChatUser, SigninUser, User, UserInput, Workspace};
 
 use axum::{
     middleware::from_fn_with_state,
@@ -56,6 +56,8 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
             "/chats/:id/message",
             get(list_message_handler).post(create_message_handler),
         )
+        .route("/upload", post(upload_handler))
+        .route("/files/:ws_id/*path", get(download_handler))
         .layer(from_fn_with_state(state.clone(), verify_token))
         // routes doesn't need token verification layer
         .route("/signin", post(signin_handler))
@@ -80,6 +82,7 @@ impl Deref for AppState {
 
 impl AppState {
     pub async fn try_new(config: AppConfig) -> Result<Self, AppError> {
+        fs::create_dir_all(&config.server.base_dir).context("create bash dir failed")?;
         let sk = EncodingKey::load(&config.auth.sk).context("load sk failed")?;
         let pk = DecodingKey::load(&config.auth.pk).context("load pk failed")?;
 

@@ -1,6 +1,7 @@
 server:
   port: 8080
   db_url: postgres://firstero:firstero@localhost:5432/chat
+  base_dir: /tmp/chat-server
 auth:
   sk: |
     -----BEGIN PRIVATE KEY-----

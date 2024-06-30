@@ -17,6 +17,9 @@ pub enum AppError {
     #[error("http header parse error: {0}")]
     HttpHeader(#[from] axum::http::header::InvalidHeaderValue),
 
+    #[error("std io error: {0}")]
+    IOError(#[from] std::io::Error),
+
     #[error("not found: {0}")]
     NotFound(String),
 
@@ -40,6 +43,7 @@ impl IntoResponse for AppError {
             AppError::EmailAlreadyExists(_) => StatusCode::CONFLICT,
             AppError::CreateChatError(_) => StatusCode::BAD_REQUEST,
             AppError::NotFound(_) => StatusCode::NOT_FOUND,
+            AppError::IOError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
         (status, Json(json!({"error": self.to_string()}))).into_response()
     }

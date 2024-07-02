@@ -13,7 +13,9 @@ use utils::{DecodingKey, EncodingKey};
 
 use std::{fmt, fs, ops::Deref, sync::Arc};
 
-pub use models::{Chat, ChatFile, ChatInput, ChatUser, SigninUser, User, UserInput, Workspace};
+pub use models::{
+    Chat, ChatFile, ChatInput, ChatUser, Message, SigninUser, User, UserInput, Workspace,
+};
 
 use axum::{
     middleware::from_fn_with_state,

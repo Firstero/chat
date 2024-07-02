@@ -39,7 +39,7 @@ pub async fn verify_token(State(state): State<AppState>, req: Request, next: Nex
 
 #[cfg(test)]
 mod tests {
-    use crate::{AppConfig, User};
+    use crate::User;
 
     use super::*;
     use anyhow::Result;
@@ -52,10 +52,8 @@ mod tests {
 
     #[tokio::test]
     async fn verify_token_should_work() -> Result<()> {
-        let config = AppConfig::try_load()?;
-
         let user = User::new(1, "test", "password");
-        let (_tdb, state) = AppState::new_for_test(config).await?;
+        let (_tdb, state) = AppState::new_for_test().await?;
         let token = state.sk.encode(user)?;
         let app = Router::new()
             .route("/", get(handler))

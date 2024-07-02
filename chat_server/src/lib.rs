@@ -123,7 +123,8 @@ mod test_utils {
 
     impl AppState {
         #[cfg(test)]
-        pub async fn new_for_test(config: AppConfig) -> Result<(TestPg, Self)> {
+        pub async fn new_for_test() -> Result<(TestPg, Self)> {
+            let config = AppConfig::try_load()?;
             let sk = EncodingKey::load(&config.auth.sk).context("load sk failed")?;
             let pk = DecodingKey::load(&config.auth.pk).context("load pk failed")?;
             let pos = config.server.db_url.rfind('/').expect("invalid db url");

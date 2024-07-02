@@ -28,7 +28,6 @@ impl DecodingKey {
         Ok(Self(Ed25519PublicKey::from_pem(pem)?))
     }
 
-    #[allow(unused)]
     pub fn verify(&self, token: &str) -> Result<User, AppError> {
         // let mut options = VerificationOptions::default();
 

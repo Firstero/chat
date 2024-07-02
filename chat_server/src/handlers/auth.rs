@@ -1,7 +1,7 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 
-use crate::{error::AppError, AppState, SigninUser, User, UserInput};
+use crate::{error::AppError, AppState, SigninUser, UserInput};
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AuthOutput {
     token: String,
@@ -11,11 +11,8 @@ pub(crate) async fn signup_handler(
     State(state): State<AppState>,
     Json(input): Json<UserInput>,
 ) -> Result<impl IntoResponse, AppError> {
-    let user = User::create(&input, &state.pool).await?;
+    let user = state.create_user(&input).await?;
     let token = state.sk.encode(user)?;
-    // let mut header = HeaderMap::new();
-    // header.insert("X-token", HeaderValue::from_str(&token)?);
-    // Ok((StatusCode::CREATED, header))
     let body = Json(AuthOutput { token });
     Ok((StatusCode::CREATED, body))
 }
@@ -24,7 +21,7 @@ pub(crate) async fn signin_handler(
     State(state): State<AppState>,
     Json(input): Json<SigninUser>,
 ) -> Result<impl IntoResponse, AppError> {
-    let user = User::verify(&input, &state.pool).await?;
+    let user = state.verify_user(&input).await?;
     match user {
         Some(user) => {
             let token = state.sk.encode(user)?;
@@ -37,14 +34,12 @@ pub(crate) async fn signin_handler(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::AppConfig;
     use anyhow::Result;
     use http_body_util::BodyExt;
 
     #[tokio::test]
     pub async fn signup_should_work() -> Result<()> {
-        let config = AppConfig::try_load()?;
-        let (_tdb, state) = AppState::new_for_test(config).await?;
+        let (_tdb, state) = AppState::new_for_test().await?;
         let input = UserInput::new("firsteor", "firstero@email", "acme", "password");
         let ret = signup_handler(State(state), Json(input))
             .await?
@@ -60,8 +55,7 @@ mod tests {
 
     #[tokio::test]
     pub async fn signin_should_work() -> Result<()> {
-        let config = AppConfig::try_load()?;
-        let (_tdb, state) = AppState::new_for_test(config).await?;
+        let (_tdb, state) = AppState::new_for_test().await?;
         // init input
         let email = "Alice@test.org";
         let password = "123456";

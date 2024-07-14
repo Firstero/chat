@@ -1,6 +1,6 @@
 use axum::{
     body::Body,
-    extract::{Multipart, Path, Request, State},
+    extract::{Multipart, Path, Query, Request, State},
     response::IntoResponse,
     Extension, Json,
 };
@@ -8,18 +8,25 @@ use tokio::fs;
 use tower_http::services::ServeFile;
 use tracing::{info, warn};
 
-use crate::{error::AppError, AppState, ChatFile, User};
+use crate::{error::AppError, AppState, ChatFile, CreateMessage, ListMessage, User};
 
-pub(crate) async fn send_message_handler() -> impl IntoResponse {
-    todo!()
+pub(crate) async fn send_message_handler(
+    Extension(user): Extension<User>,
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+    Json(input): Json<CreateMessage>,
+) -> Result<impl IntoResponse, AppError> {
+    let message = state.create_message(input, id, user.id as _).await?;
+    Ok(Json(message))
 }
 
-pub(crate) async fn list_message_handler() -> impl IntoResponse {
-    todo!()
-}
-
-pub(crate) async fn create_message_handler() -> impl IntoResponse {
-    todo!()
+pub(crate) async fn list_message_handler(
+    State(state): State<AppState>,
+    Path(chat_id): Path<u64>,
+    Query(input): Query<ListMessage>,
+) -> Result<impl IntoResponse, AppError> {
+    let messages = state.list_messages(chat_id, &input).await.unwrap();
+    Ok(Json(messages))
 }
 
 pub(crate) async fn download_handler(

@@ -17,3 +17,17 @@ INSERT INTO chats (ws_id, name, type, members) VALUES
 INSERT INTO chats (ws_id, type, members) VALUES
 (1, 'single', '{2, 4}'),
 (1, 'group', '{1, 2, 3}');
+
+
+-- insert 10 messages
+INSERT INTO messages (chat_id, sender_id, content) VALUES
+(1, 1, 'Hello Bob!'),
+(1, 2, 'Hello Alice!'),
+(1, 1, 'How are you?'),
+(1, 2, 'I am fine, thank you!'),
+(1, 1, 'Good to hear that!'),
+(1, 2, 'How about you?'),
+(1, 1, 'I am fine too!'),
+(1, 2, 'Great!'),
+(1, 1, 'Bye!'),
+(1, 2, 'Bye!');

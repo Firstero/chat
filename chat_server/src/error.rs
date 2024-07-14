@@ -37,6 +37,9 @@ pub enum AppError {
 
     #[error("conflict error: {0}")]
     EmailAlreadyExists(String),
+
+    #[error("verify chat error: {0}")]
+    VerifyChatError(String),
 }
 
 impl IntoResponse for AppError {
@@ -52,6 +55,7 @@ impl IntoResponse for AppError {
             AppError::Jwt(_) => StatusCode::FORBIDDEN,
             AppError::NotFound(_) => StatusCode::NOT_FOUND,
             AppError::Sqlx(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::VerifyChatError(_) => StatusCode::FORBIDDEN,
         };
         (status, Json(json!({"error": self.to_string()}))).into_response()
     }

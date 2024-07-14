@@ -1,4 +1,5 @@
 mod auth;
+mod chat;
 mod request_id;
 mod server_time;
 
@@ -15,6 +16,7 @@ use self::request_id::set_request_id;
 use self::server_time::ServerTimeLayer;
 
 pub use self::auth::verify_token;
+pub use self::chat::verify_chat;
 
 const REQUEST_ID_HEADER: &str = "x-request-id";
 const SERVER_TIME: &str = "x-server-time";

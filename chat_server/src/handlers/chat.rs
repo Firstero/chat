@@ -5,7 +5,7 @@ use axum::{
     Extension, Json,
 };
 
-use crate::{error::AppError, AppState, ChatInput, User};
+use crate::{error::AppError, AppState, CreateChat, User};
 
 pub(crate) async fn list_chat_handler(
     Extension(user): Extension<User>,
@@ -18,7 +18,7 @@ pub(crate) async fn list_chat_handler(
 pub(crate) async fn create_chat_handler(
     Extension(user): Extension<User>,
     State(state): State<AppState>,
-    Json(chat): Json<ChatInput>,
+    Json(chat): Json<CreateChat>,
 ) -> Result<impl IntoResponse, AppError> {
     let chat = state.create_chat(&chat, user.ws_id as _).await?;
     Ok((StatusCode::CREATED, Json(chat)))

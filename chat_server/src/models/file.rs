@@ -75,6 +75,10 @@ mod tests {
         assert_eq!(file.ext, "txt");
         assert_eq!(file.hash.len(), 40);
         assert_eq!(file.hash, "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed");
+        assert_eq!(
+            file.url(),
+            "/files/1/2aa/e6c/35c94fcfb415dbe95f408b9ce91ee846ed.txt"
+        );
         Ok(())
     }
 }

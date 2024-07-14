@@ -9,7 +9,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 pub use {
-    chat::ChatInput,
+    chat::CreateChat,
+    message::{CreateMessage, ListMessage},
     user::{ChatUser, SigninUser, UserInput},
 };
 

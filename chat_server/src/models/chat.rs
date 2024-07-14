@@ -5,14 +5,14 @@ use crate::{error::AppError, AppState};
 use super::{Chat, ChatType};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
-pub struct ChatInput {
+pub struct CreateChat {
     pub name: Option<String>,
     pub members: Vec<i64>,
     pub public: bool,
 }
 
 impl AppState {
-    pub async fn create_chat(&self, chat: &ChatInput, ws_id: u64) -> Result<Chat, AppError> {
+    pub async fn create_chat(&self, chat: &CreateChat, ws_id: u64) -> Result<Chat, AppError> {
         // check if members length is greater than 1
         let len = chat.members.len();
         if len < 2 {
@@ -104,6 +104,21 @@ impl AppState {
         .await?;
         Ok(chats)
     }
+
+    pub async fn is_chat_member(&self, chat_id: u64, user_id: u64) -> Result<bool, AppError> {
+        let is_member = sqlx::query(
+            r#"
+            SELECT 1
+            FROM chats
+            WHERE id = $1 AND $2 = ANY(members)
+            "#,
+        )
+        .bind(chat_id as i64)
+        .bind(user_id as i64)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(is_member.is_some())
+    }
 }
 
 #[cfg(test)]
@@ -113,7 +128,7 @@ mod tests {
     use super::*;
     use anyhow::Result;
 
-    impl ChatInput {
+    impl CreateChat {
         fn new(name: &str, members: &[i64], public: bool) -> Self {
             Self {
                 name: if name.is_empty() {
@@ -131,7 +146,7 @@ mod tests {
     async fn create_single_chat_should_work() -> Result<()> {
         let (_tdb, state) = AppState::new_for_test().await?;
         let ws_id = 1;
-        let chat = ChatInput::new("", &[1, 2], false);
+        let chat = CreateChat::new("", &[1, 2], false);
         let chat = state
             .create_chat(&chat, ws_id)
             .await
@@ -146,7 +161,7 @@ mod tests {
     async fn create_public_named_chat_should_work() -> Result<()> {
         let (_tdb, state) = AppState::new_for_test().await?;
         let ws_id = 1;
-        let chat = ChatInput::new("group chat", &[1, 2, 3, 4], true);
+        let chat = CreateChat::new("group chat", &[1, 2, 3, 4], true);
         let chat = state
             .create_chat(&chat, ws_id)
             .await
@@ -161,7 +176,7 @@ mod tests {
     async fn create_private_named_chat_should_work() -> Result<()> {
         let (_tdb, state) = AppState::new_for_test().await?;
         let ws_id = 1;
-        let chat = ChatInput::new("group chat", &[1, 2, 3, 4, 5], false);
+        let chat = CreateChat::new("group chat", &[1, 2, 3, 4, 5], false);
         let chat = state
             .create_chat(&chat, ws_id)
             .await
@@ -189,6 +204,24 @@ mod tests {
         let (_tdb, state) = AppState::new_for_test().await?;
         let chats = state.fetch_all_chat(1).await?;
         assert_eq!(4, chats.len());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn is_chat_member_should_work() -> Result<()> {
+        let (_tdb, state) = AppState::new_for_test().await?;
+
+        let chat_id = 1;
+        assert!(state.is_chat_member(chat_id, 1).await?);
+        assert!(state.is_chat_member(chat_id, 2).await?);
+        for i in 3..=5 {
+            assert!(!state.is_chat_member(chat_id, i).await?);
+        }
+
+        let chat_id = 2;
+        for i in 1..=5 {
+            assert!(state.is_chat_member(chat_id, i).await?);
+        }
         Ok(())
     }
 }

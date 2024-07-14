@@ -30,16 +30,16 @@ CREATE TABLE IF NOT EXISTS chats (
 CREATE INDEX chat_created_at_idx ON chats(created_at DESC);
 
 -- create message table
-CREATE TABLE IF NOT EXISTS message (
+CREATE TABLE IF NOT EXISTS messages (
     id BIGSERIAL PRIMARY KEY,
     chat_id BIGINT NOT NULL REFERENCES chats(id),
     sender_id BIGINT NOT NULL REFERENCES users(id),
     content TEXT NOT NULL,
-    files TEXT[],
+    files TEXT[] DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- chat_id, created_at desc
-CREATE INDEX IF NOT EXISTS message_chat_id_created_at_idx ON message(chat_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS message_chat_id_created_at_idx ON messages(chat_id, created_at DESC);
 -- create index on sender_id, created_at desc
-CREATE INDEX IF NOT EXISTS message_sender_id_created_at_idx ON message(sender_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS message_sender_id_created_at_idx ON messages(sender_id, created_at DESC);
